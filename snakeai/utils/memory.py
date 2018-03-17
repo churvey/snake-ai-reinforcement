@@ -62,10 +62,10 @@ class ExperienceReplay(object):
         episode_ends = experience[:, 2 * input_dim + 2]
 
         # Reshape to match the batch structure.
-        states = states.reshape((batch_size, ) + self.input_shape)
+        states = states.reshape((batch_size,) + self.input_shape)
         actions = np.cast['int'](actions)
         rewards = rewards.repeat(self.num_actions).reshape((batch_size, self.num_actions))
-        states_next = states_next.reshape((batch_size, ) + self.input_shape)
+        states_next = states_next.reshape((batch_size,) + self.input_shape)
         episode_ends = episode_ends.repeat(self.num_actions).reshape((batch_size, self.num_actions))
 
         # Predict future state-action values.
@@ -77,4 +77,4 @@ class ExperienceReplay(object):
         delta[np.arange(batch_size), actions] = 1
 
         targets = (1 - delta) * y[:batch_size] + delta * (rewards + discount_factor * (1 - episode_ends) * Q_next)
-        return states, targets
+        return states, targets, actions

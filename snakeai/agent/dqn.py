@@ -2,6 +2,7 @@ import collections
 import numpy as np
 
 from snakeai.agent import AgentBase
+from snakeai.model.model import Model
 from snakeai.utils.memory import ExperienceReplay
 
 
@@ -11,15 +12,15 @@ class DeepQNetworkAgent(AgentBase):
     def __init__(self, model, num_last_frames=4, memory_size=1000):
         """
         Create a new DQN-based agent.
-        
+
         Args:
             model: a compiled DQN model.
             num_last_frames (int): the number of last frames the agent will consider.
-            memory_size (int): memory size limit for experience replay (-1 for unlimited). 
+            memory_size (int): memory size limit for experience replay (-1 for unlimited).
         """
         assert model.input_shape[1] == num_last_frames, 'Model input shape should be (num_frames, grid_size, grid_size)'
         assert len(model.output_shape) == 2, 'Model output shape should be (num_samples, num_actions)'
-
+        list
         self.model = model
         self.num_last_frames = num_last_frames
         self.memory = ExperienceReplay((num_last_frames,) + model.input_shape[-2:], model.output_shape[-1], memory_size)
@@ -32,9 +33,9 @@ class DeepQNetworkAgent(AgentBase):
     def get_last_frames(self, observation):
         """
         Get the pixels of the last `num_last_frames` observations, the current frame being the last.
-        
+
         Args:
-            observation: observation at the current timestep. 
+            observation: observation at the current timestep.
 
         Returns:
             Observations for the last `num_last_frames` frames.
@@ -51,7 +52,7 @@ class DeepQNetworkAgent(AgentBase):
               exploration_range=(1.0, 0.1), exploration_phase_size=0.5):
         """
         Train the agent to perform well in the given Snake environment.
-        
+
         Args:
             env:
                 an instance of Snake environment.
@@ -64,7 +65,7 @@ class DeepQNetworkAgent(AgentBase):
             checkpoint_freq (int):
                 the number of episodes after which a new model checkpoint will be created.
             exploration_range (tuple):
-                a (max, min) range specifying how the exploration rate should decay over time. 
+                a (max, min) range specifying how the exploration rate should decay over time.
             exploration_phase_size (float):
                 the percentage of the training process at which
                 the exploration rate should reach its minimum.
@@ -114,8 +115,15 @@ class DeepQNetworkAgent(AgentBase):
                 )
                 # Learn on the batch.
                 if batch:
-                    inputs, targets = batch
-                    loss += float(self.model.train_on_batch(inputs, targets))
+                    if isinstance(self.model, Model):
+                        inputs, targets, actions = batch
+                        # summary = dict(actions=actions, fruits_eaten=env.stats.fruits_eaten,
+                        #                timesteps_survived=env.stats.timesteps_survived)
+                        summary = [actions, env.stats.fruits_eaten, env.stats.timesteps_survived]
+                        loss += float(self.model.train_on_batch(inputs, targets, summary))
+                    else:
+                        inputs, targets, _, = batch
+                        loss += float(self.model.train_on_batch(inputs, targets))
 
             if checkpoint_freq and (episode % checkpoint_freq) == 0:
                 self.model.save(f'dqn-{episode:08d}.model')
@@ -135,7 +143,7 @@ class DeepQNetworkAgent(AgentBase):
     def act(self, observation, reward):
         """
         Choose the next action to take.
-        
+
         Args:
             observation: observable state for the current timestep. 
             reward: reward received at the beginning of the current timestep.
