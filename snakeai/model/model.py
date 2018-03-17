@@ -17,18 +17,24 @@ class Model:
 
         summary_names = ["actions", "fruits_eaten", "timesteps_survived"]
 
-        summary_variables = [tf.Variable(name=name + "_variable", dtype=tf.int8,
+        summary_variables = [tf.Variable(name=name + "_variable", dtype=tf.int32,
                                          initial_value=[0] * self.output_shape[1])
                              for name in summary_names if name == "actions"]
 
-        summary_variables += [tf.Variable(name=name + "_variable", dtype=tf.int8, initial_value=0) for name in
+        summary_variables += [tf.Variable(name=name + "_variable", dtype=tf.int32, initial_value=0) for name in
                               summary_names if name != "actions"]
-        summary_ops = [tf.assign(summary_variables[i],
-                                 tf.placeholder(dtype=summary_variables[i].dtype))
-                       for i in range(len(summary_names))]
 
-        summary = [tf.summary.histogram(summary_names[i], summary_variables[i]) for i in range(1)]
-        summary += [tf.summary.scalar(summary_names[i], summary_variables[i]) for i in range(1, len(summary_names))]
+        self.summary_placeholders = [tf.placeholder(dtype=summary_variables[i].dtype)
+                                     for i in range(len(summary_names))]
+
+        # summary_ops = [tf.assign(summary_variables[i],self.summary_placeholders[i])
+        #                for i in range(len(summary_names))]
+
+        summary_ops = []
+
+        summary = [tf.summary.histogram(summary_names[i], self.summary_placeholders[i]) for i in range(1)]
+        summary += [tf.summary.scalar(summary_names[i], self.summary_placeholders[i]) for i in
+                    range(1, len(summary_names))]
 
         self.summary_ops = summary_ops + [tf.summary.merge_all()]
 
@@ -37,6 +43,8 @@ class Model:
         optimizer = AdamOptimizer()
         self.train_step = optimizer.minimize(loss=self.loss, global_step=global_step)
         self.sess = tf.Session()
+
+        self.summary_writer.add_graph(tf.get_default_graph())
 
         with self.sess.as_default():
             tf.global_variables_initializer().run()
@@ -55,7 +63,8 @@ class Model:
     def train_on_batch(self, samples, targets, summary):
         global_step = tf.train.get_global_step()
         summary[0], _ = np.histogram(summary[0], bins=range(self.output_shape[1] + 1))
-        feed_dict = {self.summary_ops[i]: summary[i] for i in range(len(summary))}
+        # feed_dict = {self.summary_ops[i]: summary[i] for i in range(len(summary))}
+        feed_dict = {self.summary_placeholders[i]: summary[i] for i in range(len(summary))}
         feed_dict[self.inputs] = samples
         feed_dict[self.targets] = targets
         run_result = self.sess.run(fetches=dict(summary=self.summary_ops, loss=self.loss, train_step=self.train_step),
@@ -67,4 +76,4 @@ class Model:
         return self.sess.run(fetches=self.network, feed_dict={self.inputs: samples})
 
     def save(self, file_name):
-        self.saver.save(self.sess, "/tmp/dqn" + file_name)
+        self.saver.save(self.sess, "/tmp/dqn/" + file_name)
