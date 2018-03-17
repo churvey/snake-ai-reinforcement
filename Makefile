@@ -15,7 +15,7 @@ play:
 	./play.py --interface cli --agent dqn --model dqn-final.model --level $(LEVEL) --num-episodes 100
 
 play-gui:
-	./play.py --interface gui --agent dqn --model dqn-final.model --level $(LEVEL) --num-episodes 10
+	./play.py --interface gui --agent dqn --model dqn-final.model --level $(LEVEL) --num-episodes 1
 
 play-human:
 	./play.py --interface gui --agent human --level $(LEVEL) --num-episodes 1

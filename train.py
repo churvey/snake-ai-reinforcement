@@ -3,6 +3,7 @@
 """ Front-end script for training a Snake agent. """
 
 import json
+import time
 import sys
 
 from keras.models import Sequential
@@ -68,7 +69,7 @@ def create_dqn_model(env, num_last_frames):
         kernel_size=(3, 3),
         strides=(1, 1),
         data_format='channels_first',
-        input_shape=(num_last_frames, ) + env.observation_shape
+        input_shape=(num_last_frames,) + env.observation_shape
     ))
     model.add(Activation('relu'))
     model.add(Conv2D(
@@ -112,4 +113,7 @@ def main():
 
 
 if __name__ == '__main__':
+    t0 = time.time()
+    tf.logging.set_verbosity(tf.logging.INFO)
     main()
+    print(f'eslaped time {time}', time.time() - t0)
