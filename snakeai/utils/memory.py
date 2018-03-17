@@ -77,4 +77,4 @@ class ExperienceReplay(object):
         delta[np.arange(batch_size), actions] = 1
 
         targets = (1 - delta) * y[:batch_size] + delta * (rewards + discount_factor * (1 - episode_ends) * Q_next)
-        return states, targets, actions
+        return states, targets

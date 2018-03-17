@@ -12,7 +12,7 @@ train:
 	./train.py --level $(LEVEL) --num-episodes 30000
 
 train_with_tensorflow:
-	./train_with_tensorflow.py --level $(LEVEL) --num-episodes 3000000
+	./train_with_tensorflow.py --level $(LEVEL) --num-episodes 300000
 
 play:
 	./play.py --interface cli --agent dqn --model dqn-final.model --level $(LEVEL) --num-episodes 100

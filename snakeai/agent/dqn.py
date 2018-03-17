@@ -49,7 +49,7 @@ class DeepQNetworkAgent(AgentBase):
         return np.expand_dims(self.frames, 0)
 
     def train(self, env, num_episodes=1000, batch_size=50, discount_factor=0.9, checkpoint_freq=None,
-              exploration_range=(0.99, 0.001), exploration_phase_size=0.9):
+              exploration_range=(0.9, 0.001), exploration_phase_size=0.95):
         """
         Train the agent to perform well in the given Snake environment.
 
@@ -82,6 +82,7 @@ class DeepQNetworkAgent(AgentBase):
             self.begin_episode()
             game_over = False
             loss = 0.0
+            actions = []
 
             # Observe the initial state.
             state = self.get_last_frames(timestep.observation)
@@ -96,6 +97,7 @@ class DeepQNetworkAgent(AgentBase):
                     action = np.argmax(q[0])
 
                 # Act on the environment.
+                actions.append(action)
                 env.choose_action(action)
                 timestep = env.timestep()
 
@@ -115,15 +117,8 @@ class DeepQNetworkAgent(AgentBase):
                 )
                 # Learn on the batch.
                 if batch:
-                    if isinstance(self.model, Model):
-                        inputs, targets, actions = batch
-                        # summary = dict(actions=actions, fruits_eaten=env.stats.fruits_eaten,
-                        #                timesteps_survived=env.stats.timesteps_survived)
-                        summary = [actions, env.stats.fruits_eaten, env.stats.timesteps_survived]
-                        loss += float(self.model.train_on_batch(inputs, targets, summary))
-                    else:
-                        inputs, targets, _, = batch
-                        loss += float(self.model.train_on_batch(inputs, targets))
+                    inputs, targets = batch
+                    loss += float(self.model.train_on_batch(inputs, targets))
 
             if checkpoint_freq and (episode % checkpoint_freq) == 0:
                 self.model.save(f'dqn-{episode:08d}.model')
@@ -137,6 +132,16 @@ class DeepQNetworkAgent(AgentBase):
                 episode + 1, num_episodes, loss, exploration_rate,
                 env.stats.fruits_eaten, env.stats.timesteps_survived, env.stats.sum_episode_rewards,
             ))
+
+            if isinstance(self.model, Model):
+                self.model.record_summary(dict(
+                    episode=episode + 1,
+                    loss=loss,
+                    exploration_rate=exploration_rate,
+                    fruits_eaten=env.stats.fruits_eaten,
+                    timesteps_survived=env.stats.timesteps_survived,
+                    actions=actions
+                ))
 
         self.model.save('dqn-final.model')
 
